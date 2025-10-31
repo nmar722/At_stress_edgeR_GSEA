@@ -80,4 +80,49 @@ legend("bottom", inset = 0.02,
        bty = "n")
 ```
 
+### Differential gene expression analysis
+```{r}
+#Design matrix
+design <- model.matrix(~ 0 + condition)
+colnames(design) <- levels(condition)
+#Estimate dispersion
+dge <- estimateDisp(dge, design)
+plotBCV(dge)
+#Check design matrix
+colnames(design)
+```
+
+```{r}
+# Define multiple contrasts
+contrasts <- makeContrasts(
+  heat_vs_control = heat - control,
+  salt_vs_control = salt - control,
+  heat_salt_vs_control = salt_heat - control,
+  levels = design)
+```
+
+```{r}
+#Fit the Quasi-Likelihood Model
+fit <- glmQLFit(dge, design)
+```
+
+```{r}
+#Set up threshold for DEGs (absolute logFC ≥ 1) 
+tr_heat <- glmTreat(fit, contrast = contrasts[,"heat_vs_control"], lfc = log2(2)) 
+
+#Classify and visualize
+is.de_heat <- decideTests(tr_heat)
+summary(is.de_heat)
+
+plotMD(tr_heat, status = is.de_heat,
+       main = "MA Plot: Heat vs Control",
+       xlab = "Average logCPM", ylab = "log2 Fold Change")
+```
+
+```{r}
+# Extract data table with DEGs
+res_heat <- topTags(tr_heat, n = Inf)$table
+head(res_heat)
+write.csv(res_heat, "DE_res_heat.csv")
+```
 
