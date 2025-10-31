@@ -22,3 +22,35 @@ The RNAseq count data from transcription profiling experiment by high throughput
 library(edgeR)
 ```
 
+### Load the data and create DGE list
+
+```{r load-data}
+# Load the count data
+raw_counts <- read.delim("E-GEOD-72806-raw-counts.tsv", stringsAsFactors = FALSE)
+# Preserve gene ID and gene name
+gene_info <- raw_counts[, c("Gene.ID", "Gene.Name")]
+# Extract count matrix (assuming counts start from column 3 onward)
+count_matrix <- raw_counts[, 3:ncol(raw_counts)]
+# Set rownames to Gene.ID
+rownames(count_matrix) <- raw_counts$Gene.ID
+```
+
+```{r}
+# Load metadata
+metadata <- read.delim("E-GEOD-72806-experiment-design.tsv", stringsAsFactors = FALSE)
+colnames(metadata)
+# Extract condition factor from metadata
+condition <- factor(metadata[["Factor.Value.environmental.stress."]],
+                    levels = c("none", "heat stress", "salt stress", "salt and heat stress"),
+                    labels = c("control", "heat", "salt", "salt_heat"))
+# Reorder columns in count matrix to match metadata
+counts <- count_matrix[, metadata$Run]
+# Ensure sample order matches
+counts <- counts[, metadata$Run]
+length(condition) == ncol(counts)  # Should return TRUE
+```
+```{r}
+# Create DGEList object
+dge <- DGEList(counts = counts, group = condition)
+```
+

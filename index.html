@@ -465,7 +465,11 @@ data with GSE</h1>
 <div id="TOC">
 <ul>
 <li><a href="#edger-analysis-of-rnaseq-data-of-arabidopsis-stress-experiment" id="toc-edger-analysis-of-rnaseq-data-of-arabidopsis-stress-experiment"><span class="toc-section-number">1</span> EdgeR analysis of RNAseq data of
-Arabidopsis stress experiment</a></li>
+Arabidopsis stress experiment</a>
+<ul>
+<li><a href="#load-the-data-and-create-dge-list" id="toc-load-the-data-and-create-dge-list"><span class="toc-section-number">1.1</span> Load the data and create DGE
+list</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -478,9 +482,48 @@ of salt and heat stress have been downloaded from <a href="https://www.ebi.ac.uk
 Atlas website</a>.</p>
 <pre class="r"><code># Load edgeR
 library(edgeR)</code></pre>
+<div id="load-the-data-and-create-dge-list" class="section level3" number="1.1">
+<h3><span class="header-section-number">1.1</span> Load the data and
+create DGE list</h3>
+<pre class="r"><code># Load the count data
+raw_counts &lt;- read.delim(&quot;E-GEOD-72806-raw-counts.tsv&quot;, stringsAsFactors = FALSE)
+# Preserve gene ID and gene name
+gene_info &lt;- raw_counts[, c(&quot;Gene.ID&quot;, &quot;Gene.Name&quot;)]
+# Extract count matrix (assuming counts start from column 3 onward)
+count_matrix &lt;- raw_counts[, 3:ncol(raw_counts)]
+# Set rownames to Gene.ID
+rownames(count_matrix) &lt;- raw_counts$Gene.ID</code></pre>
+<pre class="r"><code># Load metadata
+metadata &lt;- read.delim(&quot;E-GEOD-72806-experiment-design.tsv&quot;, stringsAsFactors = FALSE)
+colnames(metadata)</code></pre>
+<pre><code>##  [1] &quot;Run&quot;                                               
+##  [2] &quot;Sample.Characteristic.age.&quot;                        
+##  [3] &quot;Sample.Characteristic.Ontology.Term.age.&quot;          
+##  [4] &quot;Sample.Characteristic.ecotype.&quot;                    
+##  [5] &quot;Sample.Characteristic.Ontology.Term.ecotype.&quot;      
+##  [6] &quot;Sample.Characteristic.organism.&quot;                   
+##  [7] &quot;Sample.Characteristic.Ontology.Term.organism.&quot;     
+##  [8] &quot;Sample.Characteristic.organism.part.&quot;              
+##  [9] &quot;Sample.Characteristic.Ontology.Term.organism.part.&quot;
+## [10] &quot;Factor.Value.environmental.stress.&quot;                
+## [11] &quot;Factor.Value.Ontology.Term.environmental.stress.&quot;  
+## [12] &quot;Analysed&quot;</code></pre>
+<pre class="r"><code># Extract condition factor from metadata
+condition &lt;- factor(metadata[[&quot;Factor.Value.environmental.stress.&quot;]],
+                    levels = c(&quot;none&quot;, &quot;heat stress&quot;, &quot;salt stress&quot;, &quot;salt and heat stress&quot;),
+                    labels = c(&quot;control&quot;, &quot;heat&quot;, &quot;salt&quot;, &quot;salt_heat&quot;))
+# Reorder columns in count matrix to match metadata
+counts &lt;- count_matrix[, metadata$Run]
+# Ensure sample order matches
+counts &lt;- counts[, metadata$Run]
+length(condition) == ncol(counts)  # Should return TRUE</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code># Create DGEList object
+dge &lt;- DGEList(counts = counts, group = condition)</code></pre>
+</div>
 </div>
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIkVkZ2VSIGFuYWx5c2lzIG9mIEFyYWJpZG9wc2lzIHN0cmVzcyBSTkFzZXEgZGF0YSB3aXRoIEdTRSINCmF1dGhvcjogIk0uIE5hb3Vta2luYSINCmRhdGU6ICJgciBTeXMuRGF0ZSgpYCINCm91dHB1dDogDQogIGh0bWxfZG9jdW1lbnQ6IA0KICAgIHRvYzogdHJ1ZQ0KICAgIG51bWJlcl9zZWN0aW9uczogdHJ1ZQ0KICAgIGNvZGVfZG93bmxvYWQ6IHRydWUNCi0tLQ0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChlY2hvID0gVFJVRSkNCmBgYA0KDQojIyBFZGdlUiBhbmFseXNpcyBvZiBSTkFzZXEgZGF0YSBvZiBBcmFiaWRvcHNpcyBzdHJlc3MgZXhwZXJpbWVudA0KDQpUaGUgUk5Bc2VxIGNvdW50IGRhdGEgZnJvbSB0cmFuc2NyaXB0aW9uIHByb2ZpbGluZyBleHBlcmltZW50IGJ5IGhpZ2ggdGhyb3VnaHB1dCBzZXF1ZW5jaW5nIG9mIEFyYWJpZG9wc2lzIHBsYW50cyBpbiByZXNwb25zZSB0byBhIGNvbWJpbmF0aW9uIG9mIHNhbHQgYW5kIGhlYXQgc3RyZXNzIGhhdmUgYmVlbiBkb3dubG9hZGVkIGZyb20gW0V4cHJlc3Npb24gQXRsYXMgd2Vic2l0ZV0oaHR0cHM6Ly93d3cuZWJpLmFjLnVrL2d4YS9leHBlcmltZW50cy9FLUdFT0QtNzI4MDYvRG93bmxvYWRzKS4NCg0KYGBge3IgbG9hZC1lZGdlUiwgbWVzc2FnZT1GQUxTRX0NCiMgTG9hZCBlZGdlUg0KbGlicmFyeShlZGdlUikNCmBgYA0KDQo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIkVkZ2VSIGFuYWx5c2lzIG9mIEFyYWJpZG9wc2lzIHN0cmVzcyBSTkFzZXEgZGF0YSB3aXRoIEdTRSINCmF1dGhvcjogIk0uIE5hb3Vta2luYSINCmRhdGU6ICJgciBTeXMuRGF0ZSgpYCINCm91dHB1dDogDQogIGh0bWxfZG9jdW1lbnQ6IA0KICAgIHRvYzogdHJ1ZQ0KICAgIG51bWJlcl9zZWN0aW9uczogdHJ1ZQ0KICAgIGNvZGVfZG93bmxvYWQ6IHRydWUNCi0tLQ0KDQpgYGB7ciBzZXR1cCwgaW5jbHVkZT1GQUxTRX0NCmtuaXRyOjpvcHRzX2NodW5rJHNldChlY2hvID0gVFJVRSkNCmBgYA0KDQojIyBFZGdlUiBhbmFseXNpcyBvZiBSTkFzZXEgZGF0YSBvZiBBcmFiaWRvcHNpcyBzdHJlc3MgZXhwZXJpbWVudA0KDQpUaGUgUk5Bc2VxIGNvdW50IGRhdGEgZnJvbSB0cmFuc2NyaXB0aW9uIHByb2ZpbGluZyBleHBlcmltZW50IGJ5IGhpZ2ggdGhyb3VnaHB1dCBzZXF1ZW5jaW5nIG9mIEFyYWJpZG9wc2lzIHBsYW50cyBpbiByZXNwb25zZSB0byBhIGNvbWJpbmF0aW9uIG9mIHNhbHQgYW5kIGhlYXQgc3RyZXNzIGhhdmUgYmVlbiBkb3dubG9hZGVkIGZyb20gW0V4cHJlc3Npb24gQXRsYXMgd2Vic2l0ZV0oaHR0cHM6Ly93d3cuZWJpLmFjLnVrL2d4YS9leHBlcmltZW50cy9FLUdFT0QtNzI4MDYvRG93bmxvYWRzKS4NCg0KYGBge3IgbG9hZC1lZGdlUiwgbWVzc2FnZT1GQUxTRX0NCiMgTG9hZCBlZGdlUg0KbGlicmFyeShlZGdlUikNCmBgYA0KDQojIyMgTG9hZCB0aGUgZGF0YSBhbmQgY3JlYXRlIERHRSBsaXN0DQoNCmBgYHtyIGxvYWQtZGF0YX0NCiMgTG9hZCB0aGUgY291bnQgZGF0YQ0KcmF3X2NvdW50cyA8LSByZWFkLmRlbGltKCJFLUdFT0QtNzI4MDYtcmF3LWNvdW50cy50c3YiLCBzdHJpbmdzQXNGYWN0b3JzID0gRkFMU0UpDQojIFByZXNlcnZlIGdlbmUgSUQgYW5kIGdlbmUgbmFtZQ0KZ2VuZV9pbmZvIDwtIHJhd19jb3VudHNbLCBjKCJHZW5lLklEIiwgIkdlbmUuTmFtZSIpXQ0KIyBFeHRyYWN0IGNvdW50IG1hdHJpeCAoYXNzdW1pbmcgY291bnRzIHN0YXJ0IGZyb20gY29sdW1uIDMgb253YXJkKQ0KY291bnRfbWF0cml4IDwtIHJhd19jb3VudHNbLCAzOm5jb2wocmF3X2NvdW50cyldDQojIFNldCByb3duYW1lcyB0byBHZW5lLklEDQpyb3duYW1lcyhjb3VudF9tYXRyaXgpIDwtIHJhd19jb3VudHMkR2VuZS5JRA0KYGBgDQoNCmBgYHtyfQ0KIyBMb2FkIG1ldGFkYXRhDQptZXRhZGF0YSA8LSByZWFkLmRlbGltKCJFLUdFT0QtNzI4MDYtZXhwZXJpbWVudC1kZXNpZ24udHN2Iiwgc3RyaW5nc0FzRmFjdG9ycyA9IEZBTFNFKQ0KY29sbmFtZXMobWV0YWRhdGEpDQojIEV4dHJhY3QgY29uZGl0aW9uIGZhY3RvciBmcm9tIG1ldGFkYXRhDQpjb25kaXRpb24gPC0gZmFjdG9yKG1ldGFkYXRhW1siRmFjdG9yLlZhbHVlLmVudmlyb25tZW50YWwuc3RyZXNzLiJdXSwNCiAgICAgICAgICAgICAgICAgICAgbGV2ZWxzID0gYygibm9uZSIsICJoZWF0IHN0cmVzcyIsICJzYWx0IHN0cmVzcyIsICJzYWx0IGFuZCBoZWF0IHN0cmVzcyIpLA0KICAgICAgICAgICAgICAgICAgICBsYWJlbHMgPSBjKCJjb250cm9sIiwgImhlYXQiLCAic2FsdCIsICJzYWx0X2hlYXQiKSkNCiMgUmVvcmRlciBjb2x1bW5zIGluIGNvdW50IG1hdHJpeCB0byBtYXRjaCBtZXRhZGF0YQ0KY291bnRzIDwtIGNvdW50X21hdHJpeFssIG1ldGFkYXRhJFJ1bl0NCiMgRW5zdXJlIHNhbXBsZSBvcmRlciBtYXRjaGVzDQpjb3VudHMgPC0gY291bnRzWywgbWV0YWRhdGEkUnVuXQ0KbGVuZ3RoKGNvbmRpdGlvbikgPT0gbmNvbChjb3VudHMpICAjIFNob3VsZCByZXR1cm4gVFJVRQ0KYGBgDQpgYGB7cn0NCiMgQ3JlYXRlIERHRUxpc3Qgb2JqZWN0DQpkZ2UgPC0gREdFTGlzdChjb3VudHMgPSBjb3VudHMsIGdyb3VwID0gY29uZGl0aW9uKQ0KYGBgDQoNCg==</div>
 
 
 
