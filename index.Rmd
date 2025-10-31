@@ -206,3 +206,51 @@ dotplot(gse, showCategory = 20, split = ".sign") +
   scale_y_discrete(labels = function(x) str_wrap(x, width = 100))
 ```
 
+
+### Encrichment Map
+```{r, message=FALSE, warning=FALSE}
+gse <- pairwise_termsim(gse)  # compute similarity matrix
+emapplot(gse, showCategory = 10)
+```
+
+### Category Netplot
+```{r, warning=FALSE}
+# categorySize can be either 'pvalue' or 'geneNum'
+cnetplot(gse, categorySize="pvalue", foldChange=gene_list, showCategory = 3)
+```
+
+### Ridgeplot
+```{r, message=FALSE, warning=FALSE}
+ridgeplot(gse) +
+  labs(x = "Enrichment Distribution") +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 8),
+    plot.margin = margin(5, 5, 5, 20, "pt"),
+    ) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 100))
+```
+
+### GSEA Plot
+**Gene Set Integer** corresponds to a gene set in the `gse` object.  
+  The first gene set is `1`, the second is `2`, and so on.
+ 
+Use the `Gene Set` param for the index in the title, and as the value for geneSetId
+```{r, message=FALSE, warning=FALSE}
+gseaplot(gse, by = "all", title = gse$Description[1], geneSetID = 1)
+```
+
+### PubMed trend of enriched terms
+```{r, message=FALSE, warning=FALSE}
+library(urltools)
+library(europepmc)
+
+terms <- gse$Description[1:3]
+pmcplot(terms, 2010:2025, proportion=FALSE)
+```
+
+## Session Info:
+```{r}
+sessionInfo()
+```
+
