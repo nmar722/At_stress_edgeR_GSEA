@@ -13,4 +13,4 @@ To be able GitHub Pages to render the html Markdown document properly follow ste
 
  1. Name your Rmd file 'index.Rmd'
  2. Knit to HTML 'index.html' and push changes to GitHub
- 3. Enable GitHub Pages from main + /docs
+ 3. Enable GitHub Pages from main + /(root), and save this setting
