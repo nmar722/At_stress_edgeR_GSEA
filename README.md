@@ -5,7 +5,7 @@ The RNAseq count data from transcription profiling experiment by high throughput
 sequencing of Arabidopsis plants in response to a combination of salt and heat
 stress have been downloaded from [Expression Atlas website](https://www.ebi.ac.uk/gxa/experiments/E-GEOD-72806/Downloads). 
 
-Description of differential gene expression analysis with edgeR followint GSE analysis 
+Description of differential gene expression analysis with edgeR following GSE analysis 
 provides at [web link](https://nmar722.github.io/At_stress_edgeR_GSEA/)
 
 ### NOTE:
