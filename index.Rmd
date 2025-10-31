@@ -54,3 +54,30 @@ length(condition) == ncol(counts)  # Should return TRUE
 dge <- DGEList(counts = counts, group = condition)
 ```
 
+### Filtering and normalization
+
+```{r}
+# Filtering
+keep <- filterByExpr(dge)
+table(keep)
+dge <- dge[keep, , keep.lib.sizes = FALSE] # Filter low-expression genes
+nrow(dge$counts) # check retained genes after filtering
+dge <- normLibSizes(dge)    # Recalculate library sizes
+# Normalize for composition bias
+dge <- calcNormFactors(dge, method = "TMM") 
+```
+
+### Visualize sample relationship
+
+```{r mds-plot, fig.width=6, fig.height=6}
+plotMDS(dge, col = as.numeric(dge$samples$group))
+legend("bottom", inset = 0.02,
+       legend = levels(dge$samples$group),
+       col = 1:length(levels(dge$samples$group)),
+       pch = 16,       # filled circles
+       ncol = 2,       # compact layout
+       horiz = FALSE,  # stacked rows
+       bty = "n")
+```
+
+
