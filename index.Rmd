@@ -126,3 +126,83 @@ head(res_heat)
 write.csv(res_heat, "DE_res_heat.csv")
 ```
 
+### Run one comparison at a time
+```{r}
+#Comparison salt vs. control
+tr_salt <- glmTreat(fit, contrast = contrasts[,"salt_vs_control"], lfc = log2(2))
+res_salt <- topTags(tr_salt, n = Inf)$table
+write.csv(res_salt, "DE_res_salt.csv")
+
+#Comparison heat_salt vs. control
+tr_heat_salt <- glmTreat(fit, contrast = contrasts[,"heat_salt_vs_control"], lfc = log2(2))
+res_heat_salt <- topTags(tr_salt, n = Inf)$table
+write.csv(res_heat_salt, "DE_res_heat_salt.csv")
+```
+
+## Gene Set Enrichment Analysis with ClusterProfiler
+The analysis performed accodring to [GSEA Tutorial](https://learn.gencore.bio.nyu.edu/rna-seq-analysis/gene-set-enrichment-analysis/).
+
+### Load the packages
+```{r GSE-packages, message=FALSE, warning=FALSE}
+library(pathview)
+library(clusterProfiler)
+library(enrichplot)
+library(ggplot2)
+```
+
+### Set the desired organism and prepare input
+```{r arabidopsis, message=FALSE, warning=FALSE}
+library(org.At.tair.db)
+organism <- "org.At.tair.db"
+if (!requireNamespace(organism, quietly = TRUE)) {
+  BiocManager::install(organism, character.only = TRUE)}
+library(organism, character.only = TRUE)
+```
+
+```{r}
+# Load saved data DE_res_heat, provide column name X for gene IDs
+df = read.csv("DE_res_heat.csv", header=TRUE)
+# We want the log2 fold change 
+original_gene_list <- df$logFC
+# Name the vector
+names(original_gene_list) <- df$X
+# Omit any NA values 
+gene_list<-na.omit(original_gene_list)
+# Check the gene_list is named numeric vector
+str(gene_list)
+# Filter out non-nuclear genes
+gene_list <- gene_list[grep("^AT[1-5]G", names(gene_list))]
+# Sort the list in decreasing order (required for clusterProfiler)
+gene_list = sort(gene_list, decreasing = TRUE)
+```
+
+### Generate GSE list
+```{r GSE, message=FALSE, warning=FALSE}
+# Check which options are available with the keytypes command
+keytypes(org.At.tair.db)
+
+# GSE list
+gse <- gseGO(geneList=gene_list, 
+             ont ="ALL", 
+             keyType = "TAIR", 
+             nPerm = 10000, 
+             minGSSize = 3, 
+             maxGSSize = 800, 
+             pvalueCutoff = 0.05, 
+             verbose = TRUE, 
+             OrgDb = organism, 
+             pAdjustMethod = "none")
+```
+### Dot plot
+```{r dotplot-panels, fig.width=10, fig.height=8}
+library(stringr) # needed to wrap the text
+dotplot(gse, showCategory = 20, split = ".sign") +
+  facet_grid(. ~ .sign) +
+  theme(
+    axis.text.y = element_text(size = 8),
+    strip.text.x = element_text(size = 10, margin = margin(t = 5, b = 5)),  # panel labels
+    plot.margin = margin(5, 5, 5, 20, "pt")
+  ) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 100))
+```
+
